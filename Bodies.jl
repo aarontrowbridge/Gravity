@@ -2,8 +2,9 @@ module Bodies
 
 using LinearAlgebra, Printf
 
-export Body, anim, gravity, octant, add!, erase!, collisions!, trim!, coalesce!, prep!
+export Body, Center, anim, gravity, octant, add!, erase!, collisions!, trim!, coalesce!, prep!
 
+# body struct
 mutable struct Body
     q::Vector{Float64}
     p::Vector{Float64}
@@ -37,40 +38,43 @@ mutable struct Body
          c::Bool) = new(q, zeros(3), m, R(m), c, 0)
 end
 
+# center of mass struct
+mutable struct Center
+    q::Vector{Float64}
+    m::Float64
+    c::Bool
+end
+
+# radius function R : mass -> radius
 R(m) = (3m / (4π))^(1/3)
 
+# gravitational constant
 const G = 4π^2
 
-function gravity(a::Body, b::Body)
-    r = norm(b.q - a.q)
-    u = (b.q - a.q) / r
-    mag = G * a.m * b.m / r^2
-    F = mag * u
-    if xor(a.c, b.c)
-        return a.c ? -F : F
-    elseif a.c & b.c
+# damping constant
+const A = 0.001
+
+# acceleration due to gravity
+g(m, r) = G * m / (r^2 + A^2)
+
+# force of gravity on body a from body or center b
+function gravity(α::Body, β::Union{Body, Center})
+    r = norm(β.q - α.q)
+    u = (β.q - α.q) / r
+    F = α.m * g(β.m, r) * u
+    if xor(α.c, β.c)
+        return α.c ? -F : F
+    elseif α.c & β.c
         return F
     else
         return -F
     end
 end
 
-function gravity(b::Body, x::Vector{Float64}, m::Float64, c::Bool)
-    r = norm(x - b.q)
-    u = (x - b.q) / r
-    mag = G * b.m * m / r^2
-    F = mag * u
-    if xor(b.c, c)
-        return b.c ? -F : F
-    elseif b.c & c
-        return F
-    else
-        return -F
-    end
-end
-
+# add body b & a to get new body
 Base.:+(a::Body, b::Body) = Body((a.m * a.q + b.m * b.q) / (a.m + b.m), a.p + b.p, a.m + b.m)
 
+# add body b to body a
 function add!(a::Body, b::Body)
     m = a.m + b.m
     a.q = (a.m * a.q + b.m * b.q) / m
@@ -79,6 +83,9 @@ function add!(a::Body, b::Body)
     a.r = R(m)
     erase!(b)
 end
+
+# add body b to center c
+add!(c::Center, b::Body) = begin M = c.m + b.m; c.q = (c.m * c.q + b.m * b.q) / M; c.m = M end
 
 function erase!(b::Body)
     b.q = zeros(3)
@@ -150,6 +157,13 @@ function octant(q, origin)
     end
 end
 
-anim(b::Body) = b.i == 0 ? nothing : @printf "c3 %f %f %f %f\n" b.q[1] b.q[2] b.q[3] b.r
+function anim(bs::Vector{Body}, io=stdout::IOStream)
+    for b in bs
+        if b.i != 0
+            @printf io "c3 %f %f %f %f\n" b.q[1] b.q[2] b.q[3] b.r
+        end
+    end
+end
+
 
 end
