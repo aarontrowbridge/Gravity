@@ -4,14 +4,6 @@ using Bodies, LinearAlgebra
 
 export Tree, populate!, forces, maxdepth, mindepth
 
-mutable struct Center
-    x::Vector{Float64}
-    m::Float64
-    c::Bool
-end
-
-add!(c::Center, b::Body) = begin M = c.m + b.m; c.x = (c.m * c.x + b.m * b.q) / M; c.m = M end
-
 mutable struct Tree
     size::Float64
     origin::Vector{Float64}
@@ -69,7 +61,7 @@ function force(b::Body, t::Tree, θ::Float64)
     F = zeros(3)
     if !(isbody(t) && b.i == t.body.i)
         s = t.size
-        d = norm(t.center.x - b.q)
+        d = norm(t.center.q - b.q)
         if θ < s/d
             if isbody(t)
                 F = gravity(b, t.body)
@@ -78,7 +70,7 @@ function force(b::Body, t::Tree, θ::Float64)
                 Threads.@threads for c in cs F += force(b, c, θ) end
             end
         else
-            F = gravity(b, t.center.x, t.center.m, t.center.c)
+            F = gravity(b, t.center)
         end
     end
     F
