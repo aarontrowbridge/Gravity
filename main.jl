@@ -17,67 +17,40 @@ function spawn(c)
     bs
 end
 
-function brute_evolve!(bs::Vector{Body})
-    for b in bs
-        b.q .+= b.p / b.m * 0.5dt
-    end
-    collisions!(bs)
-    for b1 in bs
-        F = zeros(3)
-        for b2 in bs
-            if b2.i != b1.i
-                F .+= gravity(b1, b2)
-            end
-        end
-        b1.p .+= F * dt
-    end
-    for b in bs
-        b.q .+= b.p / b.m * 0.5dt
-    end
-    collisions!(bs)
-end
-
-function tree_evolve!(bs::Vector{Body})
-    for b in bs
-        b.q .+= b.p / b.m * 0.5dt
-    end
-    tree = Tree(L, true)
-    populate!(tree, bs)
-    Fs = forces(tree, tree, θ)
-    for (F, i) in Fs
-        bs[i].p .+= F * dt
-    end
-    for b in bs
-        b.q .+= b.p / b.m * 0.5dt
-    end
-end
-
 const N = 500
 const L = 200.
 const m₀ = 0.1
 const ω = 0.1
 const dt = 0.001
-const θ = 0.0
-const star = true
-const maxitr = 1e6
+const θ = 1.0
+const star = false
+const maxitr = 1e5
 
 function main()
     bodies::Vector{Body} = spawn(true)
     prep!(bodies, L)
+
     if star
         sun = Body(zeros(3), zeros(3), 100., length(bodies) + 1)
         push!(bodies, sun)
     end
+
     frame = 0
     while frame <= maxitr
-        brute_evolve!(bodies)
-        # tree_evolve!(bodies)
+
+        # brute_evolve!(bodies, dt)
+        tree_evolve!(bodies, dt, L, θ)
+
         trim!(bodies, L)
+
+        coalesce!(bodies)
+
         if frame % 50 == 0
             anim.(bodies)
             println("F")
         end
         frame += 1
+
     end
 end
 

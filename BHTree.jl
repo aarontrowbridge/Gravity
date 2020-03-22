@@ -2,7 +2,7 @@ module BHTree
 
 using Bodies, LinearAlgebra
 
-export Tree, populate!, forces, maxdepth, mindepth
+export Tree, populate!, forces, maxdepth, mindepth, tree_evolve!
 
 mutable struct Center
     x::Vector{Float64}
@@ -82,6 +82,21 @@ function force(b::Body, t::Tree, θ::Float64)
         end
     end
     F
+end
+
+function tree_evolve!(bs::Vector{Body}, dt::Float64, L::Float64, θ::Float64)
+    for b in bs
+        b.q .+= b.p / b.m * 0.5dt
+    end
+    tree = Tree(L, true)
+    populate!(tree, bs)
+    Fs = forces(tree, tree, θ)
+    for (F, i) in Fs
+        bs[i].p .+= F * dt
+    end
+    for b in bs
+        b.q .+= b.p / b.m * 0.5dt
+    end
 end
 
 end
