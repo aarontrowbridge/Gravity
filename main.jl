@@ -35,6 +35,7 @@ function main()
         push!(bodies, sun)
     end
 
+
     frame = 0
     while frame <= maxitr
 
@@ -48,7 +49,9 @@ function main()
         if frame % 50 == 0
             anim.(bodies)
             println("F")
+            # write(io, "F\n")
         end
+
         frame += 1
 
     end
