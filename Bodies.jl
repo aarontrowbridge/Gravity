@@ -2,7 +2,7 @@ module Bodies
 
 using LinearAlgebra, Printf
 
-export Body, Center, anim, gravity, octant, add!, erase!, collisions!, trim!, coalesce!, prep!
+export Body, anim, gravity, octant, add!, erase!, collisions!, trim!, coalesce!, prep!, brute_evolve!
 
 # body struct
 mutable struct Body
@@ -165,5 +165,23 @@ function anim(bs::Vector{Body}, io=stdout::IOStream)
     end
 end
 
+
+function brute_evolve!(bs::Vector{Body}, dt::Float64)
+    for b in bs
+        b.q .+= b.p / b.m * 0.5dt
+    end
+    for b1 in bs
+        F = zeros(3)
+        for b2 in bs
+            if b2.i != b1.i
+                F .+= gravity(b1, b2)
+            end
+        end
+        b1.p .+= F * dt
+    end
+    for b in bs
+        b.q .+= b.p / b.m * 0.5dt
+    end
+end
 
 end
