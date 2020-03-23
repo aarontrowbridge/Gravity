@@ -51,20 +51,30 @@ R(m) = (3m / (4π))^(1/3)
 # gravitational constant
 const G = 4π^2
 
-# damping constant
-const A = 0.001
+# force of gravity on body a from body b
+function gravity(a::Body, b::Body)
+    r = norm(b.q - a.q)
+    u = (b.q - a.q) / r
+    mag = G * a.m * b.m / r^2 - r^(-6)
+    F = mag * u
+    if xor(a.c, b.c)
+        return a.c ? -F : F
+    elseif a.c & b.c
+        return F
+    else
+        return -F
+    end
+end
 
-# acceleration due to gravity
-g(m, r) = G * m / (r^2 + A^2)
-
-# force of gravity on body a from body or center b
-function gravity(α::Body, β::Union{Body, Center})
-    r = norm(β.q - α.q)
-    u = (β.q - α.q) / r
-    F = α.m * g(β.m, r) * u
-    if xor(α.c, β.c)
-        return α.c ? -F : F
-    elseif α.c & β.c
+# force of gravity on body b from center of mass
+function gravity(b::Body, x::Vector{Float64}, m::Float64, c::Bool)
+    r = norm(x - b.q)
+    u = (x - b.q) / r
+    mag = G * b.m * m / r^2
+    F = mag * u
+    if xor(b.c, c)
+        return b.c ? -F : F
+    elseif b.c & c
         return F
     else
         return -F
