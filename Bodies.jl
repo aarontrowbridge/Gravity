@@ -75,6 +75,7 @@ function gravity(b::Body, x::Vector{Float64}, m::Float64, c::Bool)
     if xor(b.c, c)
         return b.c ? -F : F
     elseif b.c & c
+
         return F
     else
         return -F
