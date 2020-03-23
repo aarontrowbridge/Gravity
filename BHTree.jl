@@ -2,15 +2,7 @@ module BHTree
 
 using Bodies, LinearAlgebra
 
-export Tree, populate!, forces, maxdepth, mindepth
-
-mutable struct Center
-    x::Vector{Float64}
-    m::Float64
-    c::Bool
-end
-
-add!(c::Center, b::Body) = begin M = c.m + b.m; c.x = (c.m * c.x + b.m * b.q) / M; c.m = M end
+export Tree, populate!, forces, maxdepth, mindepth, tree_evolve!
 
 mutable struct Tree
     size::Float64
@@ -69,7 +61,7 @@ function force(b::Body, t::Tree, θ::Float64)
     F = zeros(3)
     if !(isbody(t) && b.i == t.body.i)
         s = t.size
-        d = norm(t.center.x - b.q)
+        d = norm(t.center.q - b.q)
         if θ < s/d
             if isbody(t)
                 F = gravity(b, t.body)
@@ -78,10 +70,25 @@ function force(b::Body, t::Tree, θ::Float64)
                 Threads.@threads for c in cs F += force(b, c, θ) end
             end
         else
-            F = gravity(b, t.center.x, t.center.m, t.center.c)
+            F = gravity(b, t.center)
         end
     end
     F
+end
+
+function tree_evolve!(bs::Vector{Body}, dt::Float64, L::Float64, θ::Float64)
+    for b in bs
+        b.q .+= b.p / b.m * 0.5dt
+    end
+    tree = Tree(L, true)
+    populate!(tree, bs)
+    Fs = forces(tree, tree, θ)
+    for (F, i) in Fs
+        bs[i].p .+= F * dt
+    end
+    for b in bs
+        b.q .+= b.p / b.m * 0.5dt
+    end
 end
 
 end
