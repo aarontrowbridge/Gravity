@@ -41,10 +41,11 @@ R(m) = (3m / (4π))^(1/3)
 
 const G = 4π^2
 
+# force of gravity on body a from body b
 function gravity(a::Body, b::Body)
     r = norm(b.q - a.q)
     u = (b.q - a.q) / r
-    mag = G * a.m * b.m / r^2
+    mag = G * a.m * b.m / r^2 - r^(-6)
     F = mag * u
     if xor(a.c, b.c)
         return a.c ? -F : F
@@ -55,6 +56,7 @@ function gravity(a::Body, b::Body)
     end
 end
 
+# force of gravity on body b from center of mass
 function gravity(b::Body, x::Vector{Float64}, m::Float64, c::Bool)
     r = norm(x - b.q)
     u = (x - b.q) / r
