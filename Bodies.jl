@@ -2,7 +2,7 @@ module Bodies
 
 using LinearAlgebra, Printf
 
-export Body, anim, gravity, octant, add!, erase!, collisions!, trim!, coalesce!, prep!, brute_evolve!
+export Body, Center, anim, gravity, octant, add!, erase!, collisions!, trim!, coalesce!, prep!, brute_evolve!
 
 # body struct
 mutable struct Body
@@ -51,15 +51,37 @@ R(m) = (3m / (4π))^(1/3)
 # gravitational constant
 const G = 4π^2
 
+# gravitational damping constant
+const A = 0.001
+
+# short range repulsion constant
+const β = 0.001
+
+# magnitude of gravity
+mag(m1, m2, r) = G * m1 * m2 / (r^2 + A^2) - β * r^(-6)
+
 # force of gravity on body a from body b
 function gravity(a::Body, b::Body)
     r = norm(b.q - a.q)
     u = (b.q - a.q) / r
-    mag = G * a.m * b.m / r^2 - r^(-6)
-    F = mag * u
+    F = mag(a.m, b.m, r) * u
     if xor(a.c, b.c)
         return a.c ? -F : F
     elseif a.c & b.c
+        return F
+    else
+        return -F
+    end
+end
+
+# force of gravity on body a from center b
+function gravity(b::Body, c::Center)
+    r = norm(c.q - b.q)
+    u = (c.q - b.q) / r
+    F = mag(b.m, c.m, r) * u
+    if xor(b.c, c.c)
+        return b.c ? -F : F
+    elseif b.c & c.c
         return F
     else
         return -F
@@ -168,14 +190,14 @@ function octant(q, origin)
     end
 end
 
-function anim(bs::Vector{Body}, io=stdout::IOStream)
+function anim(bs::Vector{Body}, io=stdout)
     for b in bs
         if b.i != 0
-            @printf io "c3 %f %f %f %f\n" b.q[1] b.q[2] b.q[3] b.r
+            println(io, "c3 $(b.q[1]) $(b.q[1]) $(b.q[1]) $(b.r)")
         end
     end
+    println(io, "F")
 end
-
 
 function brute_evolve!(bs::Vector{Body}, dt::Float64)
     for b in bs

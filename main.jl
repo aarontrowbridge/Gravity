@@ -17,16 +17,18 @@ function spawn(c)
     bs
 end
 
-const N = 500
+const N = 10
 const L = 200.
-const m₀ = 0.1
-const ω = 0.1
+const m₀ = 1.
+const ω = 0.0
 const dt = 0.001
 const θ = 1.0
 const star = false
-const maxitr = 1e5
+const maxitr = 1e3
 
 function main()
+    println("prepping bodies..")
+
     bodies::Vector{Body} = spawn(true)
     prep!(bodies, L)
 
@@ -35,24 +37,31 @@ function main()
         push!(bodies, sun)
     end
 
+    println("beginning loops..")
 
-    frame = 0
-    while frame <= maxitr
+    itr = 0
+    while itr <= maxitr
 
         # brute_evolve!(bodies, dt)
         tree_evolve!(bodies, dt, L, θ)
 
         trim!(bodies, L)
 
-        coalesce!(bodies)
+        # coalesce!(bodies)
 
-        if frame % 50 == 0
-            anim.(bodies)
-            println("F")
+        # io = open("data/N$(N)_m$(m₀)_omega$(ω)$(star ? "_star" : "").dat", "w")
+        io = stdout
+
+        if itr % 25 == 0
+            if itr % 500 == 0
+                println("itr = $(itr)")
+            end
+            anim(bodies, io)
+            # println(io, "F")
             # write(io, "F\n")
         end
 
-        frame += 1
+        itr += 1
 
     end
 end
