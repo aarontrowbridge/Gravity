@@ -38,6 +38,8 @@ const star = true
 const maxitr = 5e5
 
 function main()
+    println("prepping bodies..")
+
     bodies::Vector{Body} = spawn(true)
     prep!(bodies, L)
 
@@ -59,7 +61,6 @@ function main()
         trim!(bodies, L)
 
         # coalesce!(bodies)
-
 
         if itr % 50 == 0
             if itr % 500 == 0 println("itr = $(itr)") end

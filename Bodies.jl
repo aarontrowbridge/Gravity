@@ -51,11 +51,14 @@ R(m) = (3m / (4π))^(1/3)
 # gravitational constant
 const G = 4π^2
 
-# damping constant
+# gravitational damping constant
 const A = 0.0001
 
+# short range repulsion constant
+const β = 1.0
+
 # magnitude of gravity
-mag(m1, m2, r) = G * m1 * m2 / (r^2 + A^2) - r^(-6)
+mag(m1, m2, r) = G * m1 * m2 / (r^2 + A^2) - β * r^(-6)
 
 # force of gravity on body a from body b
 function gravity(a::Body, b::Body)
@@ -70,6 +73,7 @@ function gravity(a::Body, b::Body)
         return -F
     end
 end
+
 
 # force of gravity on body b from center of mass c
 function gravity(b::Body, c::Center)
