@@ -2,7 +2,7 @@ module Bodies
 
 using LinearAlgebra
 
-export Body, Center, gravity, add!, erase!, collisions!, trim!, coalesce!, prep!, brute_evolve!
+export Body, Center, gravity, add!, erase!, collisions!, trim!, coalesce!, coalesce_star!, prep!, brute_evolve!
 
 # body struct
 mutable struct Body
@@ -52,10 +52,10 @@ R(m) = (3m / (4π))^(1/3)
 const G = 4π^2
 
 # damping constant
-const A = 0.001
+const A = 0.0001
 
 # magnitude of gravity
-mag(m1, m2, r) = G * m1 * m2 / (r^2 + A^2) - r^(-8)
+mag(m1, m2, r) = G * m1 * m2 / (r^2 + A^2) - r^(-6)
 
 # force of gravity on body a from body b
 function gravity(a::Body, b::Body)
@@ -147,7 +147,20 @@ function coalesce!(bs::Vector{Body})
             if a.i == b.i || b.i == 0 continue end
             pair = Set([a.i, b.i])
             R = norm(a.q - b.q)
-            if R < a.r + b.r && !(pair in pairs) push!(pairs, pair); add!(a, b) end
+            if R < a.r + b.r && !(pair in pairs)
+                push!(pairs, pair)
+                add!(a, b)
+            end
+        end
+    end
+    filter!(b -> b.i != 0, bs)
+    for k = 1:length(bs) bs[k].i = k end
+end
+
+function coalesce_star!(bs::Vector{Body})
+    for j = 1:length(bs)-1
+        if norm(bs[j].q - bs[end].q) < bs[j].r + bs[end].r
+            add!(bs[end], bs[j])
         end
     end
     filter!(b -> b.i != 0, bs)
