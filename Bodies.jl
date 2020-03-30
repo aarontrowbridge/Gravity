@@ -1,8 +1,8 @@
 module Bodies
 
-using LinearAlgebra, Printf
+using LinearAlgebra
 
-export Body, Center, anim, gravity, octant, add!, erase!, collisions!, trim!, coalesce!, prep!, brute_evolve!
+export Body, Center, gravity, add!, erase!, collisions!, trim!, coalesce!, coalesce_star!, prep!, brute_evolve!
 
 # body struct
 mutable struct Body
@@ -52,10 +52,10 @@ R(m) = (3m / (4π))^(1/3)
 const G = 4π^2
 
 # gravitational damping constant
-const A = 0.001
+const A = 0.0001
 
 # short range repulsion constant
-const β = 0.001
+const β = 1.0
 
 # magnitude of gravity
 mag(m1, m2, r) = G * m1 * m2 / (r^2 + A^2) - β * r^(-6)
@@ -74,7 +74,8 @@ function gravity(a::Body, b::Body)
     end
 end
 
-# force of gravity on body a from center b
+
+# force of gravity on body b from center of mass c
 function gravity(b::Body, c::Center)
     r = norm(c.q - b.q)
     u = (c.q - b.q) / r
@@ -82,22 +83,6 @@ function gravity(b::Body, c::Center)
     if xor(b.c, c.c)
         return b.c ? -F : F
     elseif b.c & c.c
-        return F
-    else
-        return -F
-    end
-end
-
-# force of gravity on body b from center of mass
-function gravity(b::Body, x::Vector{Float64}, m::Float64, c::Bool)
-    r = norm(x - b.q)
-    u = (x - b.q) / r
-    mag = G * b.m * m / r^2
-    F = mag * u
-    if xor(b.c, c)
-        return b.c ? -F : F
-    elseif b.c & c
-
         return F
     else
         return -F
@@ -166,37 +151,24 @@ function coalesce!(bs::Vector{Body})
             if a.i == b.i || b.i == 0 continue end
             pair = Set([a.i, b.i])
             R = norm(a.q - b.q)
-            if R < a.r + b.r && !(pair in pairs) push!(pairs, pair); add!(a, b) end
+            if R < a.r + b.r && !(pair in pairs)
+                push!(pairs, pair)
+                add!(a, b)
+            end
         end
     end
     filter!(b -> b.i != 0, bs)
     for k = 1:length(bs) bs[k].i = k end
 end
 
-function octant(q, origin)
-    x = q - origin
-    if sign(x[3]) == 1
-        if sign(x[2]) == 1
-            return sign(x[1]) == 1 ? 1 : 2
-        else
-            return sign(x[1]) == 1 ? 3 : 4
-        end
-    else
-        if sign(x[2]) == 1
-            return sign(x[1]) == 1 ? 5 : 6
-        else
-            return sign(x[1]) == 1 ? 7 : 8
+function coalesce_star!(bs::Vector{Body})
+    for j = 1:length(bs)-1
+        if norm(bs[j].q - bs[end].q) < bs[j].r + bs[end].r
+            add!(bs[end], bs[j])
         end
     end
-end
-
-function anim(bs::Vector{Body}, io=stdout)
-    for b in bs
-        if b.i != 0
-            println(io, "c3 $(b.q[1]) $(b.q[1]) $(b.q[1]) $(b.r)")
-        end
-    end
-    println(io, "F")
+    filter!(b -> b.i != 0, bs)
+    for k = 1:length(bs) bs[k].i = k end
 end
 
 function brute_evolve!(bs::Vector{Body}, dt::Float64)
