@@ -91,4 +91,22 @@ function tree_evolve!(bs::Vector{Body}, dt::Float64, L::Float64, θ::Float64)
     end
 end
 
+function octant(q, origin)
+    x = q - origin
+    if sign(x[3]) == 1
+        if sign(x[2]) == 1
+            return sign(x[1]) == 1 ? 1 : 2
+        else
+            return sign(x[1]) == 1 ? 3 : 4
+        end
+    else
+        if sign(x[2]) == 1
+            return sign(x[1]) == 1 ? 5 : 6
+        else
+            return sign(x[1]) == 1 ? 7 : 8
+        end
+    end
+end
+
+
 end

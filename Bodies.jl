@@ -1,8 +1,8 @@
 module Bodies
 
-using LinearAlgebra, Printf
+using LinearAlgebra
 
-export Body, anim, gravity, octant, add!, erase!, collisions!, trim!, coalesce!, prep!, brute_evolve!
+export Body, Center, gravity, add!, erase!, collisions!, trim!, coalesce!, prep!, brute_evolve!
 
 # body struct
 mutable struct Body
@@ -51,12 +51,17 @@ R(m) = (3m / (4π))^(1/3)
 # gravitational constant
 const G = 4π^2
 
+# damping constant
+const A = 0.001
+
+# magnitude of gravity
+mag(m1, m2, r) = G * m1 * m2 / (r^2 + A^2) - r^(-8)
+
 # force of gravity on body a from body b
 function gravity(a::Body, b::Body)
     r = norm(b.q - a.q)
     u = (b.q - a.q) / r
-    mag = G * a.m * b.m / r^2 - r^(-6)
-    F = mag * u
+    F = mag(a.m, b.m, r) * u
     if xor(a.c, b.c)
         return a.c ? -F : F
     elseif a.c & b.c
@@ -66,16 +71,14 @@ function gravity(a::Body, b::Body)
     end
 end
 
-# force of gravity on body b from center of mass
-function gravity(b::Body, x::Vector{Float64}, m::Float64, c::Bool)
-    r = norm(x - b.q)
-    u = (x - b.q) / r
-    mag = G * b.m * m / r^2
-    F = mag * u
-    if xor(b.c, c)
+# force of gravity on body b from center of mass c
+function gravity(b::Body, c::Center)
+    r = norm(c.q - b.q)
+    u = (c.q - b.q) / r
+    F = mag(b.m, c.m, r) * u
+    if xor(b.c, c.c)
         return b.c ? -F : F
-    elseif b.c & c
-
+    elseif b.c & c.c
         return F
     else
         return -F
@@ -150,32 +153,6 @@ function coalesce!(bs::Vector{Body})
     filter!(b -> b.i != 0, bs)
     for k = 1:length(bs) bs[k].i = k end
 end
-
-function octant(q, origin)
-    x = q - origin
-    if sign(x[3]) == 1
-        if sign(x[2]) == 1
-            return sign(x[1]) == 1 ? 1 : 2
-        else
-            return sign(x[1]) == 1 ? 3 : 4
-        end
-    else
-        if sign(x[2]) == 1
-            return sign(x[1]) == 1 ? 5 : 6
-        else
-            return sign(x[1]) == 1 ? 7 : 8
-        end
-    end
-end
-
-function anim(bs::Vector{Body}, io=stdout::IOStream)
-    for b in bs
-        if b.i != 0
-            @printf io "c3 %f %f %f %f\n" b.q[1] b.q[2] b.q[3] b.r
-        end
-    end
-end
-
 
 function brute_evolve!(bs::Vector{Body}, dt::Float64)
     for b in bs

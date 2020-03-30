@@ -17,10 +17,21 @@ function spawn(c)
     bs
 end
 
-const N = 500
+function anim(io, bs::Vector{Body})
+    for b in bs
+        if b.i != 0
+            x, y, z = b.q
+            r = b.r
+            println(io, "c3 $x $y $z $r")
+        end
+    end
+    println(io, "F")
+end
+
+const N = 200
 const L = 200.
-const m₀ = 0.1
-const ω = 0.1
+const m₀ = 0.2
+const ω = 0.0
 const dt = 0.001
 const θ = 1.0
 const star = false
@@ -35,6 +46,8 @@ function main()
         push!(bodies, sun)
     end
 
+    io = open("data/n$(N)_m$(m₀)_omega$(ω)_$(star ? "star" : "").dat", "w")
+    # io = stdout
 
     frame = 0
     while frame <= maxitr
@@ -44,12 +57,10 @@ function main()
 
         trim!(bodies, L)
 
-        coalesce!(bodies)
+        # coalesce!(bodies)
 
         if frame % 50 == 0
-            anim.(bodies)
-            println("F")
-            # write(io, "F\n")
+            anim(io, bodies)
         end
 
         frame += 1
