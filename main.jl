@@ -23,10 +23,10 @@ function anim(io, bs::Vector{Body})
             x, y, z = b.q
             r = b.r
             println(io, "c3 $x $y $z $r")
-            println(io, "T -0.9 0.9")
-            println(io, "n = $(length(bs))")
         end
     end
+    println(io, "T -0.9 0.9")
+    println(io, "n = $(length(bs))")
     println(io, "F")
 end
 
@@ -51,8 +51,8 @@ function main()
     # io = open("data/n$(N)_m$(m₀)_omega$(ω)_theta$(θ)$(star ? "_star" : "").dat", "w")
     io = stdout
 
-    frame = 0
-    while frame <= maxitr
+    itr = 0
+    while itr <= maxitr
 
         # brute_evolve!(bodies, dt)
         tree_evolve!(bodies, dt, L, θ)
@@ -60,14 +60,14 @@ function main()
         trim!(bodies, L)
 
         # coalesce!(bodies)
-        coalesce_star!(bodies)
+        if star coalesce_star!(bodies) end
 
-        if frame % 50 == 0
-            if frame % 500 == 0 println(frame) end
+        if itr % 50 == 0
+            if itr % 500 == 0 println(itr) end
             anim(io, bodies)
         end
 
-        frame += 1
+        itr += 1
 
     end
 end

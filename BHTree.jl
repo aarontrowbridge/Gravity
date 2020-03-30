@@ -2,7 +2,7 @@ module BHTree
 
 using Bodies, LinearAlgebra
 
-export Tree, populate!, forces, maxdepth, mindepth, tree_evolve!
+export Tree, populate!, tree_evolve!, maxdepth, mindepth
 
 mutable struct Tree
     size::Float64
