@@ -60,6 +60,7 @@ function main()
         # coalesce!(bodies)
 
         if frame % 50 == 0
+            if frame % 500 == 0 println(frame) end
             anim(io, bodies)
         end
 
